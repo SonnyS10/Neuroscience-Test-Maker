@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "name": "Multi-Modal Attention Test",
+    "description": "A sample test demonstrating synchronized visual and auditory stimuli for attention research",
+    "duration_ms": 10000
+  },
+  "events": [
+    {
+      "event_type": "image",
+      "timestamp_ms": 0,
+      "data": {
+        "filepath": "/path/to/fixation_cross.png",
+        "duration_ms": 500,
+        "position": "center"
+      }
+    },
+    {
+      "event_type": "audio",
+      "timestamp_ms": 500,
+      "data": {
+        "filepath": "/path/to/beep_low.wav",
+        "duration_ms": 200,
+        "volume": 0.8
+      }
+    },
+    {
+      "event_type": "image",
+      "timestamp_ms": 1000,
+      "data": {
+        "filepath": "/path/to/target_stimulus.png",
+        "duration_ms": 2000,
+        "position": "center"
+      }
+    },
+    {
+      "event_type": "audio",
+      "timestamp_ms": 1500,
+      "data": {
+        "filepath": "/path/to/tone_match.wav",
+        "duration_ms": 1000,
+        "volume": 1.0
+      }
+    },
+    {
+      "event_type": "image",
+      "timestamp_ms": 4000,
+      "data": {
+        "filepath": "/path/to/distractor.png",
+        "duration_ms": 1000,
+        "position": "top-right"
+      }
+    },
+    {
+      "event_type": "audio",
+      "timestamp_ms": 5000,
+      "data": {
+        "filepath": "/path/to/beep_high.wav",
+        "duration_ms": 200,
+        "volume": 0.8
+      }
+    },
+    {
+      "event_type": "image",
+      "timestamp_ms": 6000,
+      "data": {
+        "filepath": "/path/to/response_prompt.png",
+        "duration_ms": 3000,
+        "position": "center"
+      }
+    }
+  ]
+}
