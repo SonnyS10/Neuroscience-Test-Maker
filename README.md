@@ -30,11 +30,29 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Starting the Application
+### Quick Start
+
+The easiest way to get started is using the launcher:
+```bash
+python launcher.py
+```
+
+This will present you with a menu to:
+1. Launch the GUI application
+2. Run a command-line demo
+3. Run the test suite
+4. Exit
+
+### Starting the Application Directly
 
 Run the test maker GUI:
 ```bash
 python test_maker.py
+```
+
+Or run the command-line demo (works without a display):
+```bash
+python demo.py
 ```
 
 ### Building a Test
@@ -146,6 +164,22 @@ The application currently implements **timeline-based synchronization**, which i
 - Integration with data collection systems
 
 ## Architecture
+
+### Project Structure
+
+```
+Neuroscience-Test-Maker/
+├── test_maker.py          # Main GUI application
+├── launcher.py            # Interactive launcher script
+├── demo.py               # Command-line demo
+├── test_core.py          # Core logic tests
+├── requirements.txt      # Python dependencies
+├── README.md            # This file
+├── QUICKSTART.md        # Quick start guide
+├── SYNCHRONIZATION.md   # Detailed synchronization documentation
+└── examples/
+    └── sample_test.json  # Example test configuration
+```
 
 ### Core Components
 
