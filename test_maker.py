@@ -443,7 +443,7 @@ class StimulusDialog:
     def browse_file(self):
         """Browse for stimulus file."""
         if self.stimulus_type == 'image':
-            filetypes = [("Image files", "*.png *.jpg *.jpeg *.bmp *.gif"), ("All files", "*.*")]
+            filetypes = [("Image files", "*.png *.jpg *.jpeg *.bmp *.gif *.tiff *.tif *.webp *.svg *.ico"), ("All files", "*.*")]
         else:  # audio
             filetypes = [("Audio files", "*.wav *.mp3 *.ogg"), ("All files", "*.*")]
         
@@ -581,10 +581,186 @@ class PreviewWindow:
         self.progress_var.set("Preview stopped")
 
 
+class StartupWindow:
+    """Startup window for creating new tests or opening existing ones."""
+    
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Neuroscience Test Maker - Welcome")
+        self.root.geometry("700x500")
+        self.root.resizable(False, False)
+        
+        # Center the window
+        self.root.update_idletasks()
+        x = (self.root.winfo_screenwidth() // 2) - (700 // 2)
+        y = (self.root.winfo_screenheight() // 2) - (500 // 2)
+        self.root.geometry(f"700x500+{x}+{y}")
+        
+        self.recent_tests = self.load_recent_tests()
+        self.create_widgets()
+    
+    def load_recent_tests(self) -> List[str]:
+        """Load list of recently opened tests."""
+        config_file = Path.home() / '.neuroscience_test_maker' / 'recent.json'
+        if config_file.exists():
+            try:
+                with open(config_file, 'r') as f:
+                    data = json.load(f)
+                    # Filter to only existing files
+                    return [p for p in data.get('recent_tests', []) if Path(p).exists()]
+            except:
+                pass
+        return []
+    
+    def save_recent_test(self, filepath: str):
+        """Save a test to the recent tests list."""
+        config_dir = Path.home() / '.neuroscience_test_maker'
+        config_dir.mkdir(exist_ok=True)
+        config_file = config_dir / 'recent.json'
+        
+        # Add to front of list, remove duplicates, keep max 10
+        recent = [filepath]
+        for path in self.recent_tests:
+            if path != filepath:
+                recent.append(path)
+        recent = recent[:10]
+        
+        try:
+            with open(config_file, 'w') as f:
+                json.dump({'recent_tests': recent}, f, indent=2)
+        except:
+            pass
+    
+    def create_widgets(self):
+        """Create the startup window widgets."""
+        # Title
+        title_label = tk.Label(self.root, text="Neuroscience Test Maker", 
+                              font=('Arial', 24, 'bold'), fg='#2c3e50')
+        title_label.pack(pady=20)
+        
+        subtitle_label = tk.Label(self.root, text="Multi-Modal Test Builder for Neuroscience Experiments", 
+                                 font=('Arial', 11), fg='#7f8c8d')
+        subtitle_label.pack(pady=(0, 30))
+        
+        # Main action buttons frame
+        action_frame = tk.Frame(self.root)
+        action_frame.pack(pady=10)
+        
+        # Create New Test button
+        new_btn = tk.Button(action_frame, text="📝 Create New Test", 
+                           font=('Arial', 14, 'bold'), bg='#3498db', fg='white',
+                           command=self.create_new_test, padx=30, pady=15,
+                           cursor='hand2', relief=tk.RAISED, bd=3)
+        new_btn.grid(row=0, column=0, padx=10)
+        
+        # Create from Template button (disabled for now)
+        template_btn = tk.Button(action_frame, text="📋 Create from Template", 
+                                font=('Arial', 14), bg='#95a5a6', fg='white',
+                                state=tk.DISABLED, padx=30, pady=15,
+                                relief=tk.RAISED, bd=3)
+        template_btn.grid(row=0, column=1, padx=10)
+        
+        # Open Existing Test button
+        open_btn = tk.Button(action_frame, text="📂 Open Test File", 
+                            font=('Arial', 14), bg='#2ecc71', fg='white',
+                            command=self.open_test, padx=30, pady=15,
+                            cursor='hand2', relief=tk.RAISED, bd=3)
+        open_btn.grid(row=1, column=0, columnspan=2, pady=10)
+        
+        # Recent tests section
+        if self.recent_tests:
+            recent_label = tk.Label(self.root, text="Recent Tests", 
+                                   font=('Arial', 12, 'bold'), fg='#2c3e50')
+            recent_label.pack(pady=(20, 10))
+            
+            # Create scrollable frame for recent tests
+            recent_frame = tk.Frame(self.root, relief=tk.SUNKEN, bd=1)
+            recent_frame.pack(pady=10, padx=40, fill=tk.BOTH, expand=True)
+            
+            canvas = tk.Canvas(recent_frame, height=150)
+            scrollbar = tk.Scrollbar(recent_frame, orient="vertical", command=canvas.yview)
+            scrollable_frame = tk.Frame(canvas)
+            
+            scrollable_frame.bind(
+                "<Configure>",
+                lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            )
+            
+            canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+            canvas.configure(yscrollcommand=scrollbar.set)
+            
+            # Add recent test items
+            for i, test_path in enumerate(self.recent_tests):
+                self.create_recent_test_item(scrollable_frame, test_path, i)
+            
+            canvas.pack(side="left", fill="both", expand=True)
+            scrollbar.pack(side="right", fill="y")
+        else:
+            # No recent tests message
+            no_recent_label = tk.Label(self.root, text="No recent tests", 
+                                      font=('Arial', 10, 'italic'), fg='#95a5a6')
+            no_recent_label.pack(pady=30)
+    
+    def create_recent_test_item(self, parent, test_path, index):
+        """Create a clickable recent test item."""
+        item_frame = tk.Frame(parent, relief=tk.RAISED, bd=1, bg='white')
+        item_frame.pack(fill=tk.X, padx=5, pady=2)
+        
+        test_name = Path(test_path).stem
+        
+        name_label = tk.Label(item_frame, text=test_name, 
+                             font=('Arial', 10, 'bold'), bg='white', anchor='w')
+        name_label.pack(side=tk.LEFT, padx=10, pady=5, fill=tk.X, expand=True)
+        
+        path_label = tk.Label(item_frame, text=test_path, 
+                             font=('Arial', 8), fg='#7f8c8d', bg='white', anchor='w')
+        path_label.pack(side=tk.LEFT, padx=10)
+        
+        # Make the whole frame clickable
+        for widget in [item_frame, name_label, path_label]:
+            widget.bind("<Button-1>", lambda e, path=test_path: self.open_recent_test(path))
+            widget.bind("<Enter>", lambda e, f=item_frame: f.config(bg='#ecf0f1'))
+            widget.bind("<Leave>", lambda e, f=item_frame: f.config(bg='white'))
+            widget.config(cursor='hand2')
+    
+    def create_new_test(self):
+        """Create a new test from scratch."""
+        self.root.destroy()
+        root = tk.Tk()
+        app = TestBuilderGUI(root)
+        root.mainloop()
+    
+    def open_test(self):
+        """Open an existing test file."""
+        filepath = filedialog.askopenfilename(
+            title="Open Test File",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+        )
+        if filepath:
+            self.open_test_file(filepath)
+    
+    def open_recent_test(self, filepath: str):
+        """Open a recent test file."""
+        if Path(filepath).exists():
+            self.open_test_file(filepath)
+        else:
+            messagebox.showerror("File Not Found", 
+                               f"The file does not exist:\n{filepath}")
+    
+    def open_test_file(self, filepath: str):
+        """Open a test file and launch the editor."""
+        self.save_recent_test(filepath)
+        self.root.destroy()
+        root = tk.Tk()
+        app = TestBuilderGUI(root)
+        app.load_test(filepath)
+        root.mainloop()
+
+
 def main():
     """Main entry point for the application."""
     root = tk.Tk()
-    app = TestBuilderGUI(root)
+    app = StartupWindow(root)
     root.mainloop()
 
 
