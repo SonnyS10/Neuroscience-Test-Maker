@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 import threading
 import time
+import pygame
+import glob
 
 
 class StimulusEvent:
@@ -386,49 +388,92 @@ class StimulusDialog:
         self.result = None
         self.stimulus_type = stimulus_type
         
+        # Initialize pygame mixer for audio preview
+        if not pygame.mixer.get_init():
+            pygame.mixer.init()
+        
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(title)
-        self.dialog.geometry("400x250")
+        self.dialog.geometry("450x350" if stimulus_type == 'audio' else "400x250")
         self.dialog.transient(parent)
         self.dialog.grab_set()
         
+        # Get default audio files if this is an audio dialog
+        self.default_audio_files = []
+        if stimulus_type == 'audio':
+            basic_audio_path = Path(__file__).parent / 'basic_auditory_stimulus'
+            if basic_audio_path.exists():
+                self.default_audio_files = list(basic_audio_path.glob('*.wav'))
+                self.default_audio_files.sort(key=lambda x: x.name)
+        
         # File selection
-        ttk.Label(self.dialog, text="File:").grid(row=0, column=0, sticky=tk.W, padx=10, pady=5)
+        current_row = 0
+        
+        # Add default audio selection for audio stimuli
+        if stimulus_type == 'audio' and self.default_audio_files:
+            ttk.Label(self.dialog, text="Default Audio:").grid(row=current_row, column=0, sticky=tk.W, padx=10, pady=5)
+            self.default_audio_var = tk.StringVar(value="Select default audio...")
+            default_names = ["Select default audio..."] + [f.stem for f in self.default_audio_files]
+            self.default_combo = ttk.Combobox(self.dialog, textvariable=self.default_audio_var, 
+                                             values=default_names, width=27, state="readonly")
+            self.default_combo.grid(row=current_row, column=1, padx=5, pady=5)
+            self.default_combo.bind('<<ComboboxSelected>>', self.on_default_selected)
+            ttk.Button(self.dialog, text="Preview", 
+                      command=self.preview_default_audio).grid(row=current_row, column=2, padx=5, pady=5)
+            current_row += 1
+            
+            # Add separator
+            ttk.Separator(self.dialog, orient='horizontal').grid(row=current_row, column=0, columnspan=3, sticky='ew', padx=10, pady=5)
+            current_row += 1
+        
+        ttk.Label(self.dialog, text="Custom File:").grid(row=current_row, column=0, sticky=tk.W, padx=10, pady=5)
         self.filepath_var = tk.StringVar()
         filepath_entry = ttk.Entry(self.dialog, textvariable=self.filepath_var, width=30)
-        filepath_entry.grid(row=0, column=1, padx=5, pady=5)
-        ttk.Button(self.dialog, text="Browse...", 
-                  command=self.browse_file).grid(row=0, column=2, padx=10, pady=5)
+        filepath_entry.grid(row=current_row, column=1, padx=5, pady=5)
+        
+        # Create frame for browse and preview buttons
+        if stimulus_type == 'audio':
+            button_frame = ttk.Frame(self.dialog)
+            button_frame.grid(row=current_row, column=2, padx=5, pady=5)
+            ttk.Button(button_frame, text="Browse...", command=self.browse_file).pack(side=tk.TOP, pady=1)
+            ttk.Button(button_frame, text="Preview", command=self.preview_custom_audio).pack(side=tk.TOP, pady=1)
+        else:
+            ttk.Button(self.dialog, text="Browse...", 
+                      command=self.browse_file).grid(row=current_row, column=2, padx=10, pady=5)
+        current_row += 1
         
         # Timestamp
-        ttk.Label(self.dialog, text="Time (ms):").grid(row=1, column=0, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(self.dialog, text="Time (ms):").grid(row=current_row, column=0, sticky=tk.W, padx=10, pady=5)
         self.timestamp_var = tk.StringVar(value="0")
         ttk.Entry(self.dialog, textvariable=self.timestamp_var, width=15).grid(
-            row=1, column=1, sticky=tk.W, padx=5, pady=5)
+            row=current_row, column=1, sticky=tk.W, padx=5, pady=5)
+        current_row += 1
         
         # Duration
-        ttk.Label(self.dialog, text="Duration (ms):").grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(self.dialog, text="Duration (ms):").grid(row=current_row, column=0, sticky=tk.W, padx=10, pady=5)
         self.duration_var = tk.StringVar(value="1000")
         ttk.Entry(self.dialog, textvariable=self.duration_var, width=15).grid(
-            row=2, column=1, sticky=tk.W, padx=5, pady=5)
+            row=current_row, column=1, sticky=tk.W, padx=5, pady=5)
+        current_row += 1
         
         # Type-specific options
         if stimulus_type == 'image':
-            ttk.Label(self.dialog, text="Position:").grid(row=3, column=0, sticky=tk.W, padx=10, pady=5)
+            ttk.Label(self.dialog, text="Position:").grid(row=current_row, column=0, sticky=tk.W, padx=10, pady=5)
             self.position_var = tk.StringVar(value="center")
             position_combo = ttk.Combobox(self.dialog, textvariable=self.position_var, 
                                          values=['center', 'top-left', 'top-right', 
                                                'bottom-left', 'bottom-right'], width=12)
-            position_combo.grid(row=3, column=1, sticky=tk.W, padx=5, pady=5)
+            position_combo.grid(row=current_row, column=1, sticky=tk.W, padx=5, pady=5)
         elif stimulus_type == 'audio':
-            ttk.Label(self.dialog, text="Volume (0-1):").grid(row=3, column=0, sticky=tk.W, padx=10, pady=5)
+            ttk.Label(self.dialog, text="Volume (0-1):").grid(row=current_row, column=0, sticky=tk.W, padx=10, pady=5)
             self.volume_var = tk.StringVar(value="1.0")
             ttk.Entry(self.dialog, textvariable=self.volume_var, width=15).grid(
-                row=3, column=1, sticky=tk.W, padx=5, pady=5)
+                row=current_row, column=1, sticky=tk.W, padx=5, pady=5)
+        current_row += 1
         
         # Buttons
         button_frame = ttk.Frame(self.dialog)
-        button_frame.grid(row=4, column=0, columnspan=3, pady=20)
+        button_frame.grid(row=current_row, column=0, columnspan=3, pady=20)
         ttk.Button(button_frame, text="OK", command=self.ok).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
         
@@ -439,6 +484,50 @@ class StimulusDialog:
         self.dialog.geometry(f"+{x}+{y}")
         
         self.dialog.wait_window()
+    
+    def on_default_selected(self, event=None):
+        """Handle default audio selection."""
+        selected = self.default_audio_var.get()
+        if selected != "Select default audio...":
+            # Find the matching file
+            for file_path in self.default_audio_files:
+                if file_path.stem == selected:
+                    self.filepath_var.set(str(file_path))
+                    break
+    
+    def preview_default_audio(self):
+        """Preview the selected default audio."""
+        selected = self.default_audio_var.get()
+        if selected == "Select default audio...":
+            messagebox.showinfo("No Selection", "Please select a default audio file first.")
+            return
+        
+        # Find the matching file
+        for file_path in self.default_audio_files:
+            if file_path.stem == selected:
+                try:
+                    pygame.mixer.music.load(str(file_path))
+                    pygame.mixer.music.play()
+                    messagebox.showinfo("Preview", f"Playing: {file_path.name}\nClick OK to stop.")
+                    pygame.mixer.music.stop()
+                except pygame.error as e:
+                    messagebox.showerror("Preview Error", f"Could not play audio: {str(e)}")
+                break
+    
+    def preview_custom_audio(self):
+        """Preview the selected custom audio file."""
+        filepath = self.filepath_var.get()
+        if not filepath:
+            messagebox.showinfo("No File", "Please select an audio file first.")
+            return
+        
+        try:
+            pygame.mixer.music.load(filepath)
+            pygame.mixer.music.play()
+            messagebox.showinfo("Preview", f"Playing: {Path(filepath).name}\nClick OK to stop.")
+            pygame.mixer.music.stop()
+        except (pygame.error, FileNotFoundError) as e:
+            messagebox.showerror("Preview Error", f"Could not play audio: {str(e)}")
     
     def browse_file(self):
         """Browse for stimulus file."""
@@ -451,6 +540,9 @@ class StimulusDialog:
                                              filetypes=filetypes)
         if filepath:
             self.filepath_var.set(filepath)
+            # Clear default audio selection when custom file is selected
+            if self.stimulus_type == 'audio' and hasattr(self, 'default_audio_var'):
+                self.default_audio_var.set("Select default audio...")
     
     def ok(self):
         """Validate and accept dialog."""
@@ -493,10 +585,21 @@ class PreviewWindow:
     
     def __init__(self, parent, timeline: TestTimeline):
         self.timeline = timeline
+        
+        # Initialize pygame mixer for audio playback
+        if not pygame.mixer.get_init():
+            pygame.mixer.init()
+        
         self.window = tk.Toplevel(parent)
         self.window.title("Test Preview")
         self.window.geometry("800x600")
         self.window.transient(parent)
+        
+        # Track currently playing audio events
+        self.playing_audio = {}  # event_id -> (sound_object, start_time)
+        
+        # Handle window closing to stop audio
+        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
         
         # Preview canvas
         self.canvas = tk.Canvas(self.window, bg='gray', width=800, height=500)
@@ -517,6 +620,12 @@ class PreviewWindow:
         self.running = False
         self.preview_thread = None
     
+    def on_closing(self):
+        """Handle window closing - stop all audio and close window."""
+        self.stop_preview()
+        pygame.mixer.stop()  # Stop all sounds
+        self.window.destroy()
+    
     def start_preview(self):
         """Start preview playback."""
         if self.running:
@@ -529,6 +638,8 @@ class PreviewWindow:
     def stop_preview(self):
         """Stop preview playback."""
         self.running = False
+        pygame.mixer.stop()  # Stop all audio
+        self.playing_audio.clear()
     
     def _run_preview(self):
         """Run the preview in a separate thread."""
@@ -560,7 +671,20 @@ class PreviewWindow:
         # Clear canvas
         self.canvas.delete("all")
         
-        # Display active events
+        # Handle audio events - stop audio that should no longer be playing
+        events_to_remove = []
+        for event_id, (sound, start_time) in self.playing_audio.items():
+            # Find the event to check if it should still be playing
+            event = next((e for e in self.timeline.events if id(e) == event_id), None)
+            if event and current_time_ms > start_time + event.data['duration_ms']:
+                # Audio should stop
+                sound.stop()
+                events_to_remove.append(event_id)
+        
+        for event_id in events_to_remove:
+            del self.playing_audio[event_id]
+        
+        # Display active events and start new audio
         for event in events:
             if event.event_type == 'image':
                 # Show image placeholder with filename
@@ -574,10 +698,28 @@ class PreviewWindow:
                 self.canvas.create_oval(50, 50, 150, 150, fill='lightgreen', outline='black')
                 self.canvas.create_text(100, 100, text=f"🔊\n{filename}", 
                                       font=('Arial', 10), justify=tk.CENTER)
+                
+                # Start audio if not already playing
+                event_id = id(event)
+                if event_id not in self.playing_audio:
+                    try:
+                        # Load and play the audio
+                        sound = pygame.mixer.Sound(event.data['filepath'])
+                        # Set volume from event data
+                        volume = event.data.get('volume', 1.0)
+                        sound.set_volume(volume)
+                        sound.play()
+                        self.playing_audio[event_id] = (sound, current_time_ms)
+                    except (pygame.error, FileNotFoundError) as e:
+                        # Show error on canvas instead
+                        self.canvas.create_text(100, 130, text=f"Error: {str(e)[:20]}...", 
+                                              font=('Arial', 8), fill='red', justify=tk.CENTER)
     
     def _clear_display(self):
         """Clear the preview display."""
         self.canvas.delete("all")
+        pygame.mixer.stop()  # Stop all sounds
+        self.playing_audio.clear()
         self.progress_var.set("Preview stopped")
 
 
