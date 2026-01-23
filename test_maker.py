@@ -14,6 +14,10 @@ import threading
 import time
 import pygame
 import glob
+try:
+    from basic_auditory_stimulus.audio_tone_maker import ToneGeneratorGUI
+except ImportError:
+    ToneGeneratorGUI = None
 
 
 class StimulusEvent:
@@ -187,6 +191,8 @@ class TestBuilderGUI:
                   command=self.add_image_stimulus).pack(fill=tk.X, pady=2)
         ttk.Button(modality_frame, text="Add Audio Stimulus", 
                   command=self.add_audio_stimulus).pack(fill=tk.X, pady=2)
+        ttk.Button(modality_frame, text="Generate Audio Tones", 
+                  command=self.open_tone_generator).pack(fill=tk.X, pady=2)
         
         # Timeline view
         timeline_frame = ttk.LabelFrame(main_frame, text="Timeline", padding="10")
@@ -297,6 +303,17 @@ class TestBuilderGUI:
         
         self.refresh_timeline_view()
         self.status_var.set("Event(s) removed")
+    
+    def open_tone_generator(self):
+        """Open the tone generator window."""
+        if ToneGeneratorGUI is None:
+            messagebox.showerror("Error", "Tone generator not available. Check that audio_tone_maker.py exists in the basic_auditory_stimulus folder.")
+            return
+        
+        try:
+            ToneGeneratorGUI(parent=self.root)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open tone generator: {str(e)}")
     
     def new_test(self):
         """Create a new test."""
