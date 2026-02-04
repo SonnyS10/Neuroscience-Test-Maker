@@ -101,8 +101,9 @@ class ToneGenerator:
 class ToneGeneratorGUI:
     """GUI for the tone generator."""
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, on_tone_generated=None):
         self.generator = ToneGenerator()
+        self.on_tone_generated = on_tone_generated  # Callback for when tone is generated
         
         # Create window
         if parent:
@@ -304,6 +305,11 @@ class ToneGeneratorGUI:
             self.generator.save_tone(audio_data, str(filepath))
             
             self.progress_var.set(f"Generated: {filename}")
+            
+            # Call callback if provided
+            if self.on_tone_generated:
+                self.on_tone_generated(str(filepath), duration)
+            
             messagebox.showinfo("Success", f"Generated single tone: {filename}")
             
         except ValueError as e:
@@ -357,6 +363,21 @@ class ToneGeneratorGUI:
             
             # Complete
             self.progress_var.set(f"Generated {len(generated_files)} tones successfully!")
+            
+            # If callback provided, ask if user wants to add them to timeline
+            if self.on_tone_generated and messagebox.askyesno(
+                "Add to Timeline", 
+                f"Generated {len(generated_files)} tones.\n\nWould you like to add them to the timeline?"):
+                # Add all generated tones with sequential timing
+                for i, freq in enumerate(frequencies):
+                    if freq.is_integer():
+                        filename = f"{prefix}_{int(freq)}Hz.wav"
+                    else:
+                        filename = f"{prefix}_{freq:.1f}Hz.wav"
+                    filepath = Path(output_dir) / filename
+                    # Add with spacing between tones
+                    self.on_tone_generated(str(filepath), duration, timestamp_offset=i * (duration * 1000 + 500))
+            
             messagebox.showinfo("Success", 
                               f"Generated {len(generated_files)} tones in:\n{output_dir}")
             
