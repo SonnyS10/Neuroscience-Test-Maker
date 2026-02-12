@@ -1,0 +1,19 @@
+*** Header Start ***
+VersionNumber:	1.0
+LevelName:	Session
+Title:	Visual Oddball Task
+Description:	Standard oddball paradigm with visual stimuli
+Exported:	Neuroscience Test Maker
+*** Header End ***
+
+Procedure	Trial	Stimulus	StimulusFile	OnsetTime	Duration	Type	Modality
+TrialProc	1	standard_stimulus	standard_stimulus.jpg	0	1000	image	IMAGE
+TrialProc	2	standard_stimulus	standard_stimulus.jpg	1500	1000	image	IMAGE
+TrialProc	3	target_stimulus	target_stimulus.jpg	3000	1000	image	IMAGE
+TrialProc	4	standard_stimulus	standard_stimulus.jpg	4500	1000	image	IMAGE
+TrialProc	5	standard_stimulus	standard_stimulus.jpg	6000	1000	image	IMAGE
+TrialProc	6	target_stimulus	target_stimulus.jpg	7500	1000	image	IMAGE
+TrialProc	7	standard_stimulus	standard_stimulus.jpg	9000	1000	image	IMAGE
+TrialProc	8	beep	beep.wav	10500	500	audio	AUDIO
+
+*** End of data ***

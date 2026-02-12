@@ -63,7 +63,7 @@ def run_tests():
     """Run the test suite."""
     print("\nRunning core logic tests...\n")
     try:
-        result = subprocess.run([sys.executable, 'test_core.py'])
+        result = subprocess.run([sys.executable, 'tests/test_core.py'])
         if result.returncode == 0:
             print("\n✓ All tests passed!")
         else:

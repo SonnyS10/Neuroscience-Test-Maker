@@ -2,18 +2,29 @@
 
 A user-friendly GUI application for building multi-modal neuroscience experiments with synchronized stimulus presentation.
 
+## 📚 Documentation
+
+- **[Quick Start Guide](docs/QUICKSTART.md)** - Get started in minutes
+- **[Export Formats Guide](docs/EXPORT_FORMATS.md)** - EEGLAB, E-Prime, and JSON export
+- **[Synchronization Guide](docs/SYNCHRONIZATION.md)** - Understanding timeline-based sync
+- **[Implementation Details](docs/IMPLEMENTATION.md)** - Architecture and design decisions
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions (pygame, Python versions)
+- **[Repository Structure](docs/REPOSITORY_STRUCTURE.md)** - Project organization
+
 ## Features
 
 - **Multi-Modal Support**: Currently supports image (visual) and audio (auditory) stimuli
 - **Timeline-Based Synchronization**: Precise millisecond-level synchronization of multiple modalities
 - **User-Friendly GUI**: Intuitive interface built with Python's tkinter
 - **Test Management**: Save, load, and edit test configurations as JSON files
+- **Multiple Export Formats**: Export to EEGLAB, E-Prime, and JSON formats
 - **Preview Functionality**: Preview your test execution before running actual experiments
 
 ## Installation
 
 ### Prerequisites
-- Python 3.7 or higher
+- Python 3.7 or higher (**3.11 or 3.12 recommended**)
+  - **Note:** Python 3.14 has pygame compatibility issues. Use 3.11 or 3.12 for best results.
 
 ### Setup
 
@@ -23,15 +34,29 @@ git clone https://github.com/SonnyS10/Neuroscience-Test-Maker.git
 cd Neuroscience-Test-Maker
 ```
 
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+2. **Windows Users - Easy Setup:**
+   - Double-click `setup_and_run.bat`
+   - The script will automatically check and install all dependencies
+   - Then launch the application
+
+3. **Manual Setup (All Platforms):**
+   ```bash
+   pip install -r requirements.txt
+   ```
+   
+   **Troubleshooting:** If you get pygame errors, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ## Usage
 
 ### Quick Start
 
+**Windows (Easiest):**
+```bash
+setup_and_run.bat
+```
+Double-click the file or run it from command prompt. It will handle everything!
+
+**All Platforms:**
 The easiest way to get started is using the launcher:
 ```bash
 python launcher.py
@@ -69,6 +94,35 @@ python demo.py
 4. **Review Timeline**: All stimuli appear in the timeline view, sorted by timestamp
 5. **Preview**: Click "Preview Test" to see a simulation of your test
 6. **Save**: Save your test configuration for later use or execution
+
+### Exporting Tests
+
+The test maker supports exporting to multiple formats for integration with popular research platforms:
+
+**Export Methods:**
+
+1. **Using Save As (Quick Method)**:
+   - Go to **File → Save Test As...**
+   - Choose your file extension:
+     - `.json` for native format (editable)
+     - `.txt` with "eeglab" in filename for EEGLAB
+     - `.txt` with "eprime" in filename for E-Prime
+   - The format is automatically detected from the extension
+
+2. **Using Export Menu (Explicit Selection)**:
+   - Go to **File → Export As**
+   - Choose your format:
+     - **EEGLAB Format (.txt)** - Tab-delimited event markers
+     - **E-Prime Format (.txt)** - Tab-delimited experimental design
+     - **JSON Format (.json)** - Native editable format
+
+**Supported Formats:**
+
+- **JSON**: Native format, can be reloaded into the application
+- **EEGLAB**: Tab-delimited event list for EEG analysis (import with `pop_importevent`)
+- **E-Prime**: Tab-delimited format compatible with E-Prime and Excel
+
+For detailed information about export formats, see [EXPORT_FORMATS.md](docs/EXPORT_FORMATS.md).
 
 ### Synchronization Approach
 
@@ -129,10 +183,10 @@ The application currently implements **timeline-based synchronization**, which i
   - Predictable execution
   - Standard in neuroscience
 - **Cons**: 
-  - Less flexible for dynamic experiments
-- **Best for**: Controlled experiments with predetermined timing
-
-### 2. Event-Driven (Future Enhancement)
+  Randomization and counterbalancing
+- Block design support
+- Integration with data collection systems
+- Direct import from EEGLAB and E-Prime format
 - **How it works**: Events trigger other events (e.g., "play sound when image appears")
 - **Pros**: 
   - More flexible
@@ -170,15 +224,27 @@ The application currently implements **timeline-based synchronization**, which i
 ```
 Neuroscience-Test-Maker/
 ├── test_maker.py          # Main GUI application
+├── export_formats.py      # Export to multiple formats
 ├── launcher.py            # Interactive launcher script
-├── demo.py               # Command-line demo
-├── test_core.py          # Core logic tests
-├── requirements.txt      # Python dependencies
-├── README.md            # This file
-├── QUICKSTART.md        # Quick start guide
-├── SYNCHRONIZATION.md   # Detailed synchronization documentation
-└── examples/
-    └── sample_test.json  # Example test configuration
+├── demo.py                # Command-line demo
+├── setup_and_run.bat      # Windows setup and launch script
+├── requirements.txt       # Python dependencies
+├── README.md              # This file
+├── docs/                  # Documentation
+│   ├── QUICKSTART.md      # Quick start guide
+│   ├── SYNCHRONIZATION.md # Synchronization documentation
+│   ├── EXPORT_FORMATS.md  # Export formats guide
+│   ├── IMPLEMENTATION.md  # Implementation details
+│   └── AUDIO_FEATURES.md  # Audio features documentation
+├── tests/                 # Test suite
+│   ├── test_core.py       # Core logic tests
+│   ├── test_export.py     # Export functionality tests
+│   └── test_audio_features.py # Audio features tests
+├── basic_auditory_stimulus/ # Audio stimulus generator
+└── examples/              # Example test configurations
+    ├── sample_test.json
+    ├── sample_export_eeglab.txt
+    └── sample_export_eprime.txt
 ```
 
 ### Core Components
@@ -195,7 +261,17 @@ Neuroscience-Test-Maker/
 - **Extensibility**: Easy to add new modality types
 - **Serialization**: Tests are saved as human-readable JSON
 - **Type Safety**: Type hints throughout for better code quality
+## Repository Structure
 
+The project is organized into clear, logical folders:
+
+- **Root** - Main application files and launcher
+- **docs/** - All documentation (guides, specifications, implementation details)
+- **tests/** - Complete test suite
+- **examples/** - Sample files demonstrating features
+- **basic_auditory_stimulus/** - Audio stimulus generation module
+
+See [docs/REPOSITORY_STRUCTURE.md](docs/REPOSITORY_STRUCTURE.md) for complete details.
 ## Contributing
 
 Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.

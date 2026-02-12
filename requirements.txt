@@ -1,3 +1,11 @@
+# Neuroscience Test Maker Dependencies
+# 
+# IMPORTANT: pygame has compatibility issues with Python 3.14+
+# Recommended Python versions: 3.11 or 3.12
+# 
+# If you encounter pygame installation errors, see docs/TROUBLESHOOTING.md
+
+# Core dependencies
 pygame>=2.5.0
 Pillow>=10.0.0
 numpy>=1.24.0

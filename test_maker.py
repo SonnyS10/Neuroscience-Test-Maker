@@ -18,6 +18,10 @@ try:
     from basic_auditory_stimulus.audio_tone_maker import ToneGeneratorGUI
 except ImportError:
     ToneGeneratorGUI = None
+try:
+    from export_formats import ExportFormats
+except ImportError:
+    ExportFormats = None
 
 
 class StimulusEvent:
@@ -152,6 +156,20 @@ class TestBuilderGUI:
         file_menu.add_command(label="Open Test...", command=self.open_test)
         file_menu.add_command(label="Save Test", command=self.save_test)
         file_menu.add_command(label="Save Test As...", command=self.save_test_as)
+        file_menu.add_separator()
+        
+        # Export submenu
+        if ExportFormats:
+            export_menu = tk.Menu(file_menu, tearoff=0)
+            file_menu.add_cascade(label="Export As", menu=export_menu)
+            export_menu.add_command(label="EEGLAB Format (.txt)", 
+                                   command=lambda: self.export_test(ExportFormats.EEGLAB))
+            export_menu.add_command(label="E-Prime Format (.txt)", 
+                                   command=lambda: self.export_test(ExportFormats.EPRIME))
+            export_menu.add_command(label="JSON Format (.json)", 
+                                   command=lambda: self.export_test(ExportFormats.JSON))
+            file_menu.add_separator()
+        
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.quit)
         
@@ -609,11 +627,17 @@ class TestBuilderGUI:
             self.save_test_as()
     
     def save_test_as(self):
-        """Save the test to a new file."""
+        """Save the test to a new file with format selection."""
+        # Get available file formats
+        if ExportFormats:
+            filetypes = ExportFormats.get_file_filters()
+        else:
+            filetypes = [("Test files", "*.json"), ("All files", "*.*")]
+        
         filepath = filedialog.asksaveasfilename(
-            title="Save Test As",
+            title="Save Test As (choose file extension for format)",
             defaultextension=".json",
-            filetypes=[("Test files", "*.json"), ("All files", "*.*")]
+            filetypes=filetypes
         )
         if filepath:
             self._save_to_file(filepath)
@@ -626,10 +650,56 @@ class TestBuilderGUI:
             self.timeline.test_metadata['name'] = self.name_entry.get()
             self.timeline.test_metadata['description'] = self.desc_entry.get()
             
-            self.timeline.save_to_file(filepath)
-            self.status_var.set(f"Saved: {filepath}")
+            # Detect format from file extension
+            if ExportFormats:
+                format_type = ExportFormats.detect_format_from_extension(filepath)
+                timeline_data = self.timeline.to_dict()
+                ExportFormats.export_timeline(timeline_data, filepath, format_type)
+                
+                # Show format info
+                format_info = ExportFormats.get_format_info()
+                format_name = format_info.get(format_type, {}).get('name', 'Unknown')
+                self.status_var.set(f"Saved as {format_name}: {filepath}")
+            else:
+                # Fallback to JSON only
+                self.timeline.save_to_file(filepath)
+                self.status_var.set(f"Saved: {filepath}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save test: {str(e)}")
+    
+    def export_test(self, format_type: str):
+        """Export test to a specific format."""
+        if not ExportFormats:
+            messagebox.showerror("Error", "Export module not available")
+            return
+        
+        # Get format info
+        format_info = ExportFormats.get_format_info().get(format_type, {})
+        extension = format_info.get('extension', '.txt')
+        format_name = format_info.get('name', 'Unknown')
+        file_filter = format_info.get('filter', ('Text files', '*.txt'))
+        
+        filepath = filedialog.asksaveasfilename(
+            title=f"Export as {format_name}",
+            defaultextension=extension,
+            filetypes=[file_filter, ("All files", "*.*")]
+        )
+        
+        if filepath:
+            try:
+                # Update metadata from UI
+                self.timeline.test_metadata['name'] = self.name_entry.get()
+                self.timeline.test_metadata['description'] = self.desc_entry.get()
+                
+                # Export to specified format
+                timeline_data = self.timeline.to_dict()
+                ExportFormats.export_timeline(timeline_data, filepath, format_type)
+                
+                self.status_var.set(f"Exported as {format_name}: {filepath}")
+                messagebox.showinfo("Export Successful", 
+                                   f"Test exported successfully to {format_name}")
+            except Exception as e:
+                messagebox.showerror("Export Error", f"Failed to export: {str(e)}")
     
     def preview_test(self):
         """Preview the test execution."""
