@@ -11,7 +11,7 @@ def test_basic_audio_access():
     """Test accessing basic auditory stimulus files."""
     print("Testing basic auditory stimulus access...")
     
-    basic_audio_path = Path(__file__).parent / 'basic_auditory_stimulus'
+    basic_audio_path = Path(__file__).parent.parent / 'basic_auditory_stimulus'
     print(f"Audio folder exists: {basic_audio_path.exists()}")
     
     if basic_audio_path.exists():

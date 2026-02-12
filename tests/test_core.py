@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 
 # Import core classes (avoiding GUI imports)
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Mock tkinter to allow importing test_maker module
 import sys
