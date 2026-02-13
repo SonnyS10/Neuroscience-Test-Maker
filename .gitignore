@@ -38,5 +38,4 @@ Thumbs.db
 
 # Test outputs
 test_outputs/
-*.wav
 *.mp3
